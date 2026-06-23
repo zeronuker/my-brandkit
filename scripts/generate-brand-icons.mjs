@@ -19,10 +19,10 @@ const configPath = configFlagIndex !== -1
 
 const { default: config } = await import(pathToFileURL(configPath).href);
 
-const FONT_CSS_URL = 'https://fonts.googleapis.com/css2?family=Tourney:wght@900&display=swap';
+const FONT_CSS_URL = 'https://fonts.googleapis.com/css2?family=Tourney:wght@500&display=swap';
 
 async function getTourneyFont() {
-  const cachePath = join(tmpdir(), 'tourney-900.ttf');
+  const cachePath = join(tmpdir(), 'tourney-500.ttf');
   if (existsSync(cachePath)) return cachePath;
   const css = await fetch(FONT_CSS_URL, { headers: { 'User-Agent': 'Mozilla/5.0' } }).then((r) => r.text());
   const fontUrl = css.match(/url\(([^)]+)\)/)[1];
