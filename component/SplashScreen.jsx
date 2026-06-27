@@ -15,6 +15,12 @@ export default function SplashScreen({ onFinish }) {
   const outerRef = useRef(null)
   const innerRef = useRef(null)
   const overlayRef = useRef(null)
+  const timersRef = useRef([])
+
+  const skip = () => {
+    timersRef.current.forEach(clearTimeout)
+    onFinish?.()
+  }
 
   useEffect(() => {
     const cBox = cBoxRef.current
@@ -62,23 +68,23 @@ export default function SplashScreen({ onFinish }) {
       onFinish?.()
     }, TOTAL)
 
+    timersRef.current = [t1, t2, t3, t4]
+
     return () => {
       cancelAnimationFrame(raf)
-      clearTimeout(t1)
-      clearTimeout(t2)
-      clearTimeout(t3)
-      clearTimeout(t4)
+      timersRef.current.forEach(clearTimeout)
     }
   }, [onFinish])
 
   return (
-    <div ref={overlayRef} className="cb-grid-bg" style={{
+    <div ref={overlayRef} className="cb-grid-bg" onClick={skip} style={{
       position: 'fixed',
       inset: 0,
       zIndex: 9999,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      cursor: 'pointer',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
 
