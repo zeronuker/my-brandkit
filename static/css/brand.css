@@ -47,6 +47,17 @@
   --cb-radius-md: 8px;
   --cb-radius-lg: 12px;
 
+  /* Update-modal theming contract — the shared UpdatePrompt component only
+     ever references these 5 names. They default to the static brand tokens
+     above; an app with a runtime-customizable accent (user-selectable theme
+     color) overrides just --cb-update-accent to point at its own live
+     accent var instead, so the modal matches whatever the user picked. */
+  --cb-update-accent: var(--cb-mint);
+  --cb-update-bg:     var(--cb-surface-1);
+  --cb-update-border: var(--cb-line-2);
+  --cb-update-muted:  var(--cb-ink-2);
+  --cb-update-dim:    var(--cb-ink-dim);
+
   color-scheme: dark;
 }
 
