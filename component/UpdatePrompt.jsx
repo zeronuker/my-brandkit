@@ -1,10 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+
+const COUNTDOWN_SECONDS = 15
 
 /**
- * Centred modal shown when a new service worker is waiting. User picks
- * which build to run: staying on "Current build" dismisses the prompt
- * (with a pointer to Settings for a manual update later); picking
- * "Latest build" updates now.
+ * Bottom-right toast shown when a new service worker is waiting. Never
+ * blocks the page — user keeps working underneath it. A 15s countdown
+ * (number + depleting bar) auto-triggers the update if left untouched;
+ * "Later" cancels the countdown and dismisses instead.
+ *
+ * `isBusy` (optional) is checked only at the moment the countdown expires —
+ * it defers the *automatic* fire (not a manual "Update now" click) for apps
+ * that track an in-progress save, so the reload doesn't land mid-write.
+ * Apps with no such state just don't pass it.
  *
  * Pure presentational component driven entirely by the `update` prop
  * (the object returned by the `useUpdate` hook) — pair the two together.
@@ -12,135 +19,147 @@ import { useState } from 'react'
  * so it matches each app's own accent color, including runtime-customizable
  * themes, without needing per-app props for colors.
  */
-export default function UpdatePrompt({ ready, update, appLabel }) {
-  const { current, latest, promptVisible, updateServiceWorker, dismissLatest } = update
-  const [selected, setSelected] = useState('latest')
+export default function UpdatePrompt({ ready, update, isBusy = false }) {
+  const { latest, promptVisible, updateServiceWorker, dismissLatest } = update
+  const visible = promptVisible && ready
 
-  if (!promptVisible || !ready) return null
+  const [remaining, setRemaining] = useState(COUNTDOWN_SECONDS)
+  const [firing, setFiring] = useState(false)
+  const isBusyRef = useRef(isBusy)
+  const firedRef = useRef(false)
 
-  const onConfirm = () => {
-    if (selected === 'latest') {
-      updateServiceWorker(true)
-    } else {
-      dismissLatest()
-    }
+  useEffect(() => {
+    isBusyRef.current = isBusy
+  }, [isBusy])
+
+  useEffect(() => {
+    if (!visible) return
+    setRemaining(COUNTDOWN_SECONDS)
+    setFiring(false)
+    firedRef.current = false
+
+    const id = setInterval(() => {
+      setRemaining((r) => {
+        if (r <= 1) {
+          // Expired: fire now, or keep polling every second until the app
+          // says it's no longer busy.
+          if (!isBusyRef.current && !firedRef.current) {
+            firedRef.current = true
+            setFiring(true)
+            updateServiceWorker(true)
+          }
+          return 0
+        }
+        return r - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(id)
+  }, [visible, updateServiceWorker])
+
+  if (!visible) return null
+
+  const onUpdateNow = () => {
+    firedRef.current = true
+    setFiring(true)
+    updateServiceWorker(true)
   }
 
+  const pct = (remaining / COUNTDOWN_SECONDS) * 100
+
   return (
-    <>
-      {/* Backdrop */}
-      <div style={{
-        position: 'fixed', inset: 0,
-        background: 'rgba(0,0,0,0.55)',
-        backdropFilter: 'blur(3px)',
-        zIndex: 9998,
-      }} />
-
-      {/* Dialog */}
-      <div style={{
-        position: 'fixed',
-        top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 9999,
-        width: 'min(320px, calc(100vw - 48px))',
-        background: 'var(--cb-update-bg)',
-        border: '1px solid color-mix(in srgb, var(--cb-update-accent) 30%, transparent)',
-        borderRadius: 10,
-        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
-        padding: '24px 22px 20px',
-      }}>
-
-        {/* Icon + title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <span style={{ fontSize: 26, lineHeight: 1 }}>⬆</span>
-          <div>
-            <div style={{
-              fontFamily: 'var(--cb-font-mono)', fontSize: 10,
-              letterSpacing: '0.18em', color: 'var(--cb-update-accent)', marginBottom: 2,
-            }}>
-              UPDATE AVAILABLE
-            </div>
-            <div style={{
-              fontFamily: 'var(--cb-font-mono)', fontSize: 8,
-              letterSpacing: '0.12em', color: 'var(--cb-update-dim)',
-            }}>
-              {appLabel}
-            </div>
-          </div>
-        </div>
-
-        <div style={{
-          fontFamily: 'var(--cb-font-mono)', fontSize: 10,
-          letterSpacing: '0.1em', color: 'var(--cb-update-dim)', marginBottom: 8,
-        }}>
-          SELECT BUILD
-        </div>
-
-        {[
-          { key: 'current', label: 'Current build', version: current.version },
-          { key: 'latest', label: 'Latest build', version: latest?.version ?? '…' },
-        ].map(({ key, label, version }) => {
-          const isSelected = selected === key
-          return (
-            <label
-              key={key}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                border: `1px solid ${isSelected ? 'color-mix(in srgb, var(--cb-update-accent) 60%, transparent)' : 'var(--cb-update-border)'}`,
-                background: isSelected ? 'color-mix(in srgb, var(--cb-update-accent) 6%, transparent)' : 'transparent',
-                borderRadius: 6, padding: '10px 12px', marginBottom: 8, cursor: 'pointer',
-              }}
-            >
-              <input
-                type="radio"
-                name="update-build"
-                checked={isSelected}
-                onChange={() => setSelected(key)}
-                style={{ accentColor: 'var(--cb-update-accent)', flexShrink: 0 }}
-              />
-              <div>
-                <div style={{
-                  fontSize: 11, fontWeight: isSelected ? 700 : 400,
-                  color: isSelected ? 'var(--cb-update-accent)' : 'var(--cb-update-muted)',
-                }}>
-                  {label}
-                </div>
-                <div style={{
-                  fontFamily: 'var(--cb-font-mono)', fontSize: 10,
-                  color: isSelected ? 'var(--cb-update-accent)' : 'var(--cb-update-dim)',
-                }}>
-                  {version}
-                </div>
-              </div>
-            </label>
-          )
-        })}
-
-        {selected === 'current' && (
-          <div style={{
-            fontFamily: 'var(--cb-font-body)', fontSize: 11, color: 'var(--cb-update-dim)',
-            lineHeight: 1.6, marginTop: 8, marginBottom: 16,
-            padding: '10px 12px', borderLeft: '2px solid var(--cb-update-border)',
+    <div style={{
+      position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
+      width: 'min(310px, calc(100vw - 40px))',
+      background: 'var(--cb-update-bg)',
+      border: '1px solid var(--cb-update-border)',
+      borderRadius: 10,
+      boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
+      padding: '16px 16px 14px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{
+            width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+            background: 'var(--cb-update-accent)',
+            boxShadow: '0 0 0 3px color-mix(in srgb, var(--cb-update-accent) 20%, transparent)',
+          }} />
+          <span style={{
+            fontFamily: 'var(--cb-font-mono)', fontSize: 10, letterSpacing: '0.14em',
+            color: 'var(--cb-update-accent)', textTransform: 'uppercase',
           }}>
-            Staying on current build. Update anytime from Settings → App update.
-          </div>
+            Update available
+          </span>
+        </div>
+        {!firing && (
+          <span style={{
+            fontFamily: 'var(--cb-font-mono)', fontSize: 10, color: 'var(--cb-update-dim)',
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+            {remaining}s
+          </span>
         )}
-
-        <button
-          onClick={onConfirm}
-          style={{
-            width: '100%',
-            background: 'color-mix(in srgb, var(--cb-update-accent) 15%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--cb-update-accent) 50%, transparent)',
-            borderRadius: 6, color: 'var(--cb-update-accent)',
-            fontFamily: 'var(--cb-font-mono)', fontSize: 10, fontWeight: 700,
-            letterSpacing: '0.14em', padding: '11px 0', cursor: 'pointer',
-            marginTop: selected === 'current' ? 0 : 8,
-          }}
-        >
-          {selected === 'latest' ? 'UPDATE NOW' : 'GOT IT'}
-        </button>
       </div>
-    </>
+
+      <p style={{
+        fontFamily: 'var(--cb-font-body)', fontSize: 12.5, color: 'var(--cb-update-muted)',
+        lineHeight: 1.5, margin: '0 0 10px',
+      }}>
+        {latest
+          ? <>Build <span style={{ fontFamily: 'var(--cb-font-mono)', color: 'var(--cb-update-accent)' }}>{latest.version}</span> is ready. Your work stays untouched — updates apply on next reload.</>
+          : 'A new build is ready. Your work stays untouched — updates apply on next reload.'}
+      </p>
+
+      {!firing && (
+        <div style={{ height: 3, borderRadius: 2, background: 'var(--cb-update-border)', overflow: 'hidden', marginBottom: 12 }}>
+          <div style={{
+            height: '100%', width: `${pct}%`,
+            background: 'var(--cb-update-accent)',
+            transition: 'width 1s linear',
+          }} />
+        </div>
+      )}
+
+      {firing ? (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          fontFamily: 'var(--cb-font-mono)', fontSize: 10, letterSpacing: '0.1em',
+          color: 'var(--cb-update-accent)', textTransform: 'uppercase', padding: '4px 0 2px',
+        }}>
+          <span style={{
+            width: 11, height: 11, borderRadius: '50%',
+            border: '2px solid color-mix(in srgb, var(--cb-update-accent) 30%, transparent)',
+            borderTopColor: 'var(--cb-update-accent)',
+            animation: 'cb-update-spin 700ms linear infinite',
+          }} />
+          Updating…
+          <style>{'@keyframes cb-update-spin { to { transform: rotate(360deg); } }'}</style>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={onUpdateNow}
+            style={{
+              flex: 1, background: 'var(--cb-update-accent)', border: 'none', borderRadius: 6,
+              color: 'var(--cb-update-bg)', fontFamily: 'var(--cb-font-mono)', fontSize: 10,
+              fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+              padding: '9px 0', cursor: 'pointer',
+            }}
+          >
+            Update now
+          </button>
+          <button
+            onClick={dismissLatest}
+            style={{
+              background: 'none', border: 'none', color: 'var(--cb-update-dim)',
+              fontFamily: 'var(--cb-font-mono)', fontSize: 10, letterSpacing: '0.06em',
+              textTransform: 'uppercase', cursor: 'pointer', padding: '9px 10px',
+            }}
+          >
+            Later
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
