@@ -7,9 +7,11 @@ Shared ClaudeBorne brand assets + generator tooling, consumed by each app as a g
 - `component/BrandBanner.jsx` — pure presentational React component, imported via Vite `resolve.alias`.
 - `component/UpdatePrompt.jsx` — the standard "update available" modal (select current vs. latest build, update now or stay put). Pure presentational, themed via the `--cb-update-*` CSS var contract (see below) — pair with `useUpdate`.
 - `component/useUpdate.js` — the hook backing `UpdatePrompt`: tracks the running build's own commit (via `__COMMIT_SHA__`), fetches the waiting build's commit from `build-info.json`, and persists "stay on current build" dismissals to localStorage.
+- `component/Changelog.jsx` — the standard changelog display (current version always expanded, past versions collapsed behind one toggle). Pure presentational, driven entirely by a `CHANGELOG` array prop — see "Adding the standard changelog" below.
 - `static/css/brand.css` — design tokens (CSS vars) + utility classes, served via `vite-plugin-static-copy`.
 - `static/logo/logo-mark.svg` / `logo-mark-light.svg` — logo mark, served via `vite-plugin-static-copy`.
 - `static/icons-template/*.template` — wordmark-templated source SVGs for app icon generation (`{{LINE1}}` / `{{LINE2}}` placeholders).
+- `changelog-template/changelog.js.template` — starter file for a new app's own `src/changelog.js` (see below).
 - `scripts/download-fonts.mjs` — downloads Google Fonts to the *consuming app's* `public/fonts/` + writes that app's `public/brand/fonts.css`. Font lists differ per app, so this is a generator, not a shared static asset.
 - `scripts/generate-brand-icons.mjs` — templates (on first run) and rasterizes a per-app icon set into that app's `public/brand/icons/<appName>/`.
 - `scripts/commit-sha.mjs` / `scripts/write-build-info.mjs` — write that app's `public/build-info.json` before every build (dev and prod), so `useUpdate` can learn a waiting update's commit. Paths resolve against `process.cwd()`, so these run correctly from any consuming app's root.
@@ -102,6 +104,34 @@ Requires `vite-plugin-pwa` already configured with `registerType: 'prompt'` (`ma
    Apps without customizable theming need no override — `--cb-update-accent` defaults to `--cb-mint` from `brand.css`.
 8. For a Settings screen "App Update" section (recommended, but not part of the shared component since every app's Settings UI is structured differently), read `update.current.version`, `update.needRefresh`, `update.checkingUpdate`, `update.updateChecked`, `update.checkForUpdate`, and `update.updateServiceWorker` to build a CHECK FOR UPDATES / UPDATE NOW control and a persistent dot badge on the settings icon while `update.needRefresh` is true.
 
+## Adding the standard changelog
+
+Every ClaudeBorne app keeps its own release notes, but presents them the same way: current version always expanded with a "you are here" marker, past versions collapsed behind one "Show previous versions" toggle, notes tagged `NEW:` / `IMP:` / `FIX:` / `DEP:` as colored badges.
+
+1. Copy the starter file into the app itself (the changelog is app-specific content, so it lives in the app's own repo, not in brand-kit):
+   ```
+   cp brand-kit/changelog-template/changelog.js.template src/changelog.js
+   ```
+   Fill in the first entry, then add one new entry per commit as the app evolves — `v1.0`, then `+0.1` per commit, capping at `x.10` before rolling to `(x+1).0` (`...v1.9, v1.10, v2.0, v2.1...`). Only the current (newest) entry carries `current: true`; every other entry omits the key entirely.
+2. Alias the component in `vite.config.js`'s existing `resolve.alias` block:
+   ```js
+   '@brand/Changelog': resolve(__dirname, 'brand-kit/component/Changelog.jsx'),
+   ```
+3. In your Settings/About screen:
+   ```js
+   import Changelog, { currentVersion } from '@brand/Changelog'
+   import { CHANGELOG } from './changelog'
+
+   const APP_VERSION = currentVersion(CHANGELOG) // single source of truth — never hardcode this elsewhere
+
+   // ...
+   <Changelog changelog={CHANGELOG} />
+   ```
+   `<Changelog>` is pure presentational and self-contained (inline-styled, no CSS classes required) — drop it into whatever tab/section structure your Settings screen already uses. It themes its current-entry highlight off `--cb-update-accent` (the same var `UpdatePrompt` uses), so if you've already overridden that for a runtime-customizable accent, the changelog matches it automatically with no extra setup.
+4. Use `APP_VERSION` everywhere the app displays its version (landing screen, footer, feedback records, etc.) instead of a hardcoded string — that's what keeps every version display in sync with the changelog automatically as new entries are added.
+
 ## Editing the brand
 
-Edit `component/BrandBanner.jsx`, `component/UpdatePrompt.jsx`, `component/useUpdate.js`, `static/css/brand.css`, or the logo SVGs in this repo, commit, then in each consuming app run `git submodule update --remote brand-kit` (or `cd brand-kit && git pull`) to pick up the change everywhere.
+Edit `component/BrandBanner.jsx`, `component/UpdatePrompt.jsx`, `component/useUpdate.js`, `component/Changelog.jsx`, `static/css/brand.css`, or the logo SVGs in this repo, commit, then in each consuming app run `git submodule update --remote brand-kit` (or `cd brand-kit && git pull`) to pick up the change everywhere.
+
+Note: `component/Changelog.jsx` only renders whatever `CHANGELOG` array an app passes in — an app's own `src/changelog.js` is that app's content, not brand-kit's, and isn't touched by a submodule update.

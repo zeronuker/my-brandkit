@@ -1,0 +1,11 @@
+// Version scheme: first commit is v1.0. Each subsequent commit is +0.1, up
+// to a max of x.10 — the commit after any x.10 rolls to (x+1).0. One entry
+// per commit, oldest first below (rendered newest-first in the UI).
+export const CHANGELOG = [
+  {
+    v: 'v1.0', date: '{{MONTH_YEAR}}', current: true, title: 'Initial scaffold',
+    notes: [
+      'NEW: {{DESCRIBE_THE_FIRST_COMMIT}}',
+    ],
+  },
+]
