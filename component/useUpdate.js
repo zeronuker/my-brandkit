@@ -34,7 +34,7 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
       if (!registration) return;
       const check = async () => {
         if (registration.installing) return;
-        if ("connection" in navigator && !navigator.onLine) return;
+        if (!navigator.onLine) return;
         await registration.update();
       };
       intervalRef.current = setInterval(check, pollIntervalMs);
