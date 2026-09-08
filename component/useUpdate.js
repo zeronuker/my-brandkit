@@ -63,6 +63,7 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
   }, [needRefresh]);
 
   const checkForUpdate = useCallback(async () => {
+    if (!navigator.onLine) return;
     setCheckingUpdate(true);
     setUpdateChecked(false);
     try {
