@@ -55,7 +55,7 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
   }, []);
 
   useEffect(() => {
-    if (!needRefresh) return;
+    if (!needRefresh || !navigator.onLine) return;
     fetch(`/build-info.json?t=${Date.now()}`, { cache: "no-store" })
       .then((res) => res.json())
       .then(setLatest)
