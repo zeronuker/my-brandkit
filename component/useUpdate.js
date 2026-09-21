@@ -35,7 +35,13 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
       const check = async () => {
         if (registration.installing) return;
         if (!navigator.onLine) return;
-        await registration.update();
+        try {
+          await registration.update();
+        } catch {
+          // offline (navigator.onLine is unreliable in iOS/iPadOS standalone
+          // PWAs) — swallow so the failed fetch doesn't surface as a native
+          // "no internet" system prompt
+        }
       };
       intervalRef.current = setInterval(check, pollIntervalMs);
       visibilityHandlerRef.current = () => {
