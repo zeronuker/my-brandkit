@@ -61,7 +61,7 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
   }, []);
 
   useEffect(() => {
-    if (!needRefresh) return;
+    if (!needRefresh || !navigator.onLine) return;
     fetch(`/build-info.json?t=${Date.now()}`, { cache: "no-store" })
       .then((res) => res.json())
       .then(setLatest)
@@ -69,6 +69,7 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
   }, [needRefresh]);
 
   const checkForUpdate = useCallback(async () => {
+    if (!navigator.onLine) return;
     setCheckingUpdate(true);
     setUpdateChecked(false);
     try {
