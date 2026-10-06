@@ -13,12 +13,23 @@ import { useRegisterSW } from "virtual:pwa-register/react";
 // this hook never collide. `pollIntervalMs` (default 60s) controls how often
 // the app checks for a new service worker while it stays open — raise it for
 // apps that only need to catch up occasionally.
+//
+// `autoUpdateDisabled` (persisted per app) stops everything automatic: the
+// poll/visibility checks, the build-info.json fetch, and the toast (so no
+// countdown). Manual `checkForUpdate` / `updateServiceWorker` still work.
 export function useUpdate(appId, pollIntervalMs = 60_000) {
   const current = { commit: __COMMIT_SHA__, version: __COMMIT_SHA__.slice(0, 7) };
   const dismissedKey = `${appId}-update-dismissed-commit`;
+  const disabledKey = `${appId}-auto-update-disabled`;
 
   const intervalRef = useRef(null);
   const visibilityHandlerRef = useRef(null);
+  const [autoUpdateDisabled, setDisabledState] = useState(
+    () => localStorage.getItem(disabledKey) === "1",
+  );
+  // ref so the long-lived interval/visibility callbacks see the live value
+  const disabledRef = useRef(autoUpdateDisabled);
+  disabledRef.current = autoUpdateDisabled;
   const [latest, setLatest] = useState(null);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateChecked, setUpdateChecked] = useState(false);
@@ -33,6 +44,7 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return;
       const check = async () => {
+        if (disabledRef.current) return;
         if (registration.installing) return;
         if (!navigator.onLine) return;
         try {
@@ -61,12 +73,21 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
   }, []);
 
   useEffect(() => {
-    if (!needRefresh || !navigator.onLine) return;
+    if (!needRefresh || !navigator.onLine || autoUpdateDisabled) return;
     fetch(`/build-info.json?t=${Date.now()}`, { cache: "no-store" })
       .then((res) => res.json())
       .then(setLatest)
       .catch(() => {});
-  }, [needRefresh]);
+  }, [needRefresh, autoUpdateDisabled]);
+
+  const setAutoUpdateDisabled = useCallback(
+    (disabled) => {
+      if (disabled) localStorage.setItem(disabledKey, "1");
+      else localStorage.removeItem(disabledKey);
+      setDisabledState(disabled);
+    },
+    [disabledKey],
+  );
 
   const checkForUpdate = useCallback(async () => {
     if (!navigator.onLine) return;
@@ -97,7 +118,10 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
     needRefresh,
     // Fail open: while the latest commit is still unknown (fetch pending or
     // offline), treat it as not dismissed rather than hiding the update.
-    promptVisible: needRefresh && (!latest || latest.commit !== dismissedCommit),
+    promptVisible:
+      !autoUpdateDisabled && needRefresh && (!latest || latest.commit !== dismissedCommit),
+    autoUpdateDisabled,
+    setAutoUpdateDisabled,
     updateServiceWorker,
     checkForUpdate,
     checkingUpdate,
