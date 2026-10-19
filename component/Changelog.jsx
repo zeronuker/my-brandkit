@@ -91,7 +91,7 @@ function ChangelogEntry({ entry, isCurrent = false }) {
       </h4>
       <ul style={{ margin: 0, paddingLeft: 18 }}>
         {entry.notes.map((note, i) => (
-          <li key={i} style={{ fontSize: 12.5, color: 'var(--cb-ink-2)', lineHeight: 1.6, padding: '3px 0' }}>
+          <li key={i} style={{ fontSize: 12.5, color: 'var(--cb-ink-2)', lineHeight: 1.6, padding: '3px 0', textAlign: 'justify', hyphens: 'auto' }}>
             <ChangelogNote note={note} />
           </li>
         ))}
