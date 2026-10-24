@@ -6,6 +6,7 @@ Shared ClaudeBorne brand assets + generator tooling, consumed by each app as a g
 
 - `component/BrandBanner.jsx` — pure presentational React component, imported via Vite `resolve.alias`.
 - `component/UpdatePrompt.jsx` — the standard "update available" modal (select current vs. latest build, update now or stay put). Pure presentational, themed via the `--cb-update-*` CSS var contract (see below) — pair with `useUpdate`.
+- `component/ChamferFrame.jsx` — the standard window frame: a double line with cut corners, for modals, popups and cards. Pure presentational; its `.cf-*` styles live in `brand.css` (see "Adding the window frame" below).
 - `component/useUpdate.js` — the hook backing `UpdatePrompt`: tracks the running build's own commit (via `__COMMIT_SHA__`), fetches the waiting build's commit from `build-info.json`, and persists "stay on current build" dismissals to localStorage.
 - `component/Changelog.jsx` — the standard changelog display (current version always expanded, past versions collapsed behind one toggle). Pure presentational, driven entirely by a `CHANGELOG` array prop — see "Adding the standard changelog" below.
 - `static/css/brand.css` — design tokens (CSS vars) + utility classes, served via `vite-plugin-static-copy`.
@@ -103,6 +104,20 @@ Requires `vite-plugin-pwa` already configured with `registerType: 'prompt'` (`ma
    ```
    Apps without customizable theming need no override — `--cb-update-accent` defaults to `--cb-mint` from `brand.css`.
 8. For a Settings screen "App Update" section (recommended, but not part of the shared component since every app's Settings UI is structured differently), read `update.current.version`, `update.needRefresh`, `update.checkingUpdate`, `update.updateChecked`, `update.checkForUpdate`, and `update.updateServiceWorker` to build a CHECK FOR UPDATES / UPDATE NOW control and a persistent dot badge on the settings icon while `update.needRefresh` is true.
+
+## Adding the window frame
+
+Every ClaudeBorne modal, popup and card uses the same frame: two thin lines with cut corners. It is drawn by four stacked, clipped layers, so it works on any background and in light or dark.
+
+1. Add the alias next to the others in `vite.config.js`: `'@brand/ChamferFrame': resolve(__dirname, 'brand-kit/component/ChamferFrame.jsx')`. The `.cf-*` styles arrive with `brand.css`, which the app already loads.
+2. Wrap the window's content in the component. Put the window's own position, size, animation class, `role` and `onClick` on it, and drop the old border, radius and box-shadow:
+   ```jsx
+   import ChamferFrame from '@brand/ChamferFrame'
+   <ChamferFrame className="my-modal" role="dialog" aria-modal="true" pad="20px 22px">…</ChamferFrame>
+   ```
+3. Props: `color` (line colour; use a warning colour for error or warning dialogs), `face` (fill), `pad` (padding inside the lines). Anything else goes on the outer box.
+4. The line follows `--cf-line`, which defaults to the brand gradient. An app with a user-selectable accent sets it once: `:root { --cf-line: var(--your-accent-gradient-or-colour); }`. The fill defaults to `--cb-surface-1`; the cut is `--cf-c` (16px, 12px under 520px).
+5. A frame clips its corners, so keep anything that must poke past the edge (menus, tooltips) outside the frame.
 
 ## Adding the standard changelog
 

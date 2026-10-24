@@ -215,3 +215,25 @@
     linear-gradient(90deg, var(--cb-grid-line) 1px, transparent 1px);
   background-size: 32px 32px;
 }
+
+/* ---- Chamfered double-line window frame (component/ChamferFrame.jsx) -- */
+/* Four stacked layers (line, face, line, face), each clipped to a corner cut whose leg shrinks
+   by 0.586 x its inset so the two lines stay parallel. The shadow is its own static layer because
+   clip-path would cut off a box-shadow. --cf-line is the line colour (default: the brand gradient;
+   an app with its own accent sets it on :root); --cf-face is the fill (default: card surface);
+   --cf-pad pads the content; --cf-c is the corner cut (16px, 12px on phones). */
+:where(.cf) { position: relative; }
+.cf { --cf-c: 16px; display: flex; flex-direction: column; }
+.cf-l1, .cf-l2, .cf-l3, .cf-l4 { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.cf-l1, .cf-l2, .cf-l3, .cf-l4, .cf-shadow > i {
+  --leg: calc(var(--cf-c) - 0.586 * var(--o));
+  clip-path: polygon(var(--leg) 0, calc(100% - var(--leg)) 0, 100% var(--leg), 100% calc(100% - var(--leg)),
+    calc(100% - var(--leg)) 100%, var(--leg) 100%, 0 calc(100% - var(--leg)), 0 var(--leg));
+}
+.cf-l1 { --o: 0px;   padding: 1.5px; background: var(--cf-line, var(--cb-grad, #3FE0C5)); }
+.cf-l2 { --o: 1.5px; padding: 3px;   background: var(--cf-face, var(--cb-surface-1, #141a2e)); }
+.cf-l3 { --o: 4.5px; padding: 1.5px; background: var(--cf-line, var(--cb-grad, #3FE0C5)); }
+.cf-l4 { --o: 6px; padding: var(--cf-pad, 0); background: var(--cf-face, var(--cb-surface-1, #141a2e)); }
+.cf-shadow { position: absolute; inset: 0; pointer-events: none; filter: drop-shadow(0 22px 36px rgba(0,0,0,0.5)); }
+.cf-shadow > i { --o: 0px; display: block; width: 100%; height: 100%; background: #000; }
+@media (max-width: 520px) { .cf { --cf-c: 12px; } }

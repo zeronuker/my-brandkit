@@ -2,6 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 
 const COUNTDOWN_SECONDS = 15
 
+// Double-line chamfered frame, drawn with four nested clipped layers (line, face, line, face).
+// Self-contained so the toast needs nothing from the host app. Each cut shrinks by 0.586 x its inset
+// so the two lines stay parallel.
+const CHAMFER = 10
+const clip = (inset) => {
+  const l = `${(CHAMFER - 0.586 * inset).toFixed(2)}px`
+  return `polygon(${l} 0, calc(100% - ${l}) 0, 100% ${l}, 100% calc(100% - ${l}), calc(100% - ${l}) 100%, ${l} 100%, 0 calc(100% - ${l}), 0 ${l})`
+}
+const LINE = 'var(--cb-update-accent)'
+const FACE = 'var(--cb-update-bg)'
+
 /**
  * Bottom-right toast shown when a new service worker is waiting. Never
  * blocks the page — user keeps working underneath it. A 15s countdown
@@ -71,12 +82,12 @@ export default function UpdatePrompt({ ready, update, isBusy = false }) {
     <div style={{
       position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
       width: 'min(310px, calc(100vw - 40px))',
-      background: 'var(--cb-update-bg)',
-      border: '1px solid var(--cb-update-border)',
-      borderRadius: 10,
-      boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
-      padding: '16px 16px 14px',
+      filter: 'drop-shadow(0 16px 28px rgba(0,0,0,0.45))',
     }}>
+    <div style={{ background: LINE, clipPath: clip(0), padding: 1.5 }}>
+    <div style={{ background: FACE, clipPath: clip(1.5), padding: 3 }}>
+    <div style={{ background: LINE, clipPath: clip(4.5), padding: 1.5 }}>
+    <div style={{ background: FACE, clipPath: clip(6), padding: '12px 14px 12px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{
@@ -160,6 +171,10 @@ export default function UpdatePrompt({ ready, update, isBusy = false }) {
           </button>
         </div>
       )}
+    </div>
+    </div>
+    </div>
+    </div>
     </div>
   )
 }
