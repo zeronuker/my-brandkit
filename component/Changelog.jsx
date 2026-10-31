@@ -74,14 +74,6 @@ function ChangelogEntry({ entry, isCurrent = false }) {
         }}>
           {entry.date}
         </span>
-        {isCurrent && (
-          <span style={{
-            fontFamily: 'var(--cb-font-mono)', fontSize: 10, letterSpacing: '0.18em',
-            color: 'var(--cb-update-accent)', textTransform: 'uppercase', marginLeft: 'auto',
-          }}>
-            // you are here
-          </span>
-        )}
       </div>
       <h4 style={{
         fontFamily: 'var(--cb-font-display)', fontWeight: 500, fontSize: 15,
