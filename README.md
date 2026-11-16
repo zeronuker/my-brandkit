@@ -8,6 +8,7 @@ Shared ClaudeBorne brand assets + generator tooling, consumed by each app as a g
 - `component/UpdatePrompt.jsx` — the standard "update available" modal (select current vs. latest build, update now or stay put). Pure presentational, themed via the `--cb-update-*` CSS var contract (see below) — pair with `useUpdate`.
 - `component/ChamferFrame.jsx` — the standard window frame: a double line with cut corners, for modals, popups and cards. Pure presentational; its `.cf-*` styles live in `brand.css` (see "Adding the window frame" below).
 - `component/useUpdate.js` — the hook backing `UpdatePrompt`: tracks the running build's own commit (via `__COMMIT_SHA__`), fetches the waiting build's commit from `build-info.json`, and persists "stay on current build" dismissals to localStorage.
+- `component/SettingsWindow.jsx` — the standard Settings window, the same in every app: tabs down the left, the chosen tab's settings on the right; a centred `ChamferFrame` window on desktop and iPad, full screen with a slim icon column on a phone. Also exports the pieces a tab is built from (`SettingsSection`, `SettingsRow`, `SettingsNote`, `Seg`, `Switch`, `Reveal`, `TabIcon`). Styles: `.cbs-*` in `brand.css` — see "Adding the Settings window" below.
 - `component/Changelog.jsx` — the standard changelog display (current version always expanded, past versions collapsed behind one toggle). Pure presentational, driven entirely by a `CHANGELOG` array prop — see "Adding the standard changelog" below.
 - `static/css/brand.css` — design tokens (CSS vars) + utility classes, served via `vite-plugin-static-copy`.
 - `static/logo/logo-mark.svg` / `logo-mark-light.svg` — logo mark, served via `vite-plugin-static-copy`.
@@ -144,6 +145,36 @@ Every ClaudeBorne app keeps its own release notes, but presents them the same wa
    ```
    `<Changelog>` is pure presentational and self-contained (inline-styled, no CSS classes required) — drop it into whatever tab/section structure your Settings screen already uses. It themes its current-entry highlight off `--cb-update-accent` (the same var `UpdatePrompt` uses), so if you've already overridden that for a runtime-customizable accent, the changelog matches it automatically with no extra setup.
 4. Use `APP_VERSION` everywhere the app displays its version (landing screen, footer, feedback records, etc.) instead of a hardcoded string — that's what keeps every version display in sync with the changelog automatically as new entries are added.
+
+## Adding the Settings window
+
+1. Add the alias: `'@brand/SettingsWindow': resolve(__dirname, 'brand-kit/component/SettingsWindow.jsx')`.
+2. Render it while Settings is open; the app keeps the state (which tab, the settings) and unmounts it after the exit animation:
+   ```jsx
+   import SettingsWindow, { SettingsSection, SettingsRow, Seg, Switch, Reveal } from '@brand/SettingsWindow'
+
+   const TABS = [
+     { id: 'general', label: 'General', hint: 'theme · motion', icon: 'general' },
+     { id: 'about',   label: 'About',   hint: 'update · changelog', icon: 'about' },
+   ]
+
+   <SettingsWindow appName="eDoc" version="v4.2" tabs={TABS} active={tab} onTab={setTab}
+     onClose={close} closing={closing} anim={{ style: 'slide', ms: 260 }}>
+     {tab === 'general' && (
+       <SettingsSection title="Animation">
+         <SettingsRow label="Animations" hint="Off when the device asks for reduced motion">
+           <Switch label="Animations" on={on} onChange={setOn} />
+         </SettingsRow>
+         <Reveal open={on}>
+           <SettingsRow label="Speed" wide><Seg label="Speed" options={SPEEDS} value={speed} onChange={setSpeed} /></SettingsRow>
+         </Reveal>
+       </SettingsSection>
+     )}
+   </SettingsWindow>
+   ```
+3. `anim` follows the app's own Animation setting: `style` is `slide`, `rise` or `cascade`, `ms` its speed (0 = off). `footer` replaces "Changes save as you go" at the bottom right (e.g. a RESTORE DEFAULTS button). Tab icons: `general`, `palette`, `views`, `nav`, `tools`, `about`, `user`, `logbook`.
+4. Rows: `wide` lets the control drop under the name when the pane is narrow; `full` always puts it under (tables, the changelog, a row of buttons). Text boxes and lists take the `cbs-input` / `cbs-select` classes, buttons `cbs-btn` (`primary`, `danger`), a read-only value `cbs-value`.
+5. Re-theme through the `--cbs-*` variables on `.cbs, .cbs-scrim` (e.g. `--cbs-acc` for a user-picked accent; `--cbs-top` for extra room above the phone header).
 
 ## Editing the brand
 
