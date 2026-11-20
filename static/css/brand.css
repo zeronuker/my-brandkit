@@ -22,6 +22,10 @@
   --cb-grad:   linear-gradient(135deg, var(--cb-mint) 0%, var(--cb-blue) 55%, var(--cb-violet) 100%);
   --cb-grad-v: linear-gradient(180deg, var(--cb-mint) 0%, var(--cb-blue) 55%, var(--cb-violet) 100%);
 
+  /* Fixed brand gradient — literal colours, so an app's accent override of
+     --cb-mint/--cb-grad can never change it. */
+  --cb-grad-brand: linear-gradient(135deg, #3FE0C5 0%, #3B8DFF 55%, #5B6BFF 100%);
+
   /* Text */
   --cb-ink:     #e8ecf5;
   --cb-ink-2:   #b8c0d4;
@@ -78,6 +82,7 @@
   --cb-mint:   #1CC2A3;
   --cb-blue:   #1F76E8;
   --cb-violet: #4554DA;
+  --cb-grad-brand: linear-gradient(135deg, #1CC2A3 0%, #1F76E8 55%, #4554DA 100%);
 
   /* Ink — mirror of dark surfaces */
   --cb-ink:     #0a1020;
@@ -105,6 +110,7 @@
     --cb-mint:   #1CC2A3;
     --cb-blue:   #1F76E8;
     --cb-violet: #4554DA;
+    --cb-grad-brand: linear-gradient(135deg, #1CC2A3 0%, #1F76E8 55%, #4554DA 100%);
     --cb-ink:     #0a1020;
     --cb-ink-2:   #3a4258;
     --cb-ink-dim: #6b7488;

@@ -63,8 +63,9 @@ function ChangelogEntry({ entry, isCurrent = false }) {
       <div style={{ display: 'flex', gap: 14, alignItems: 'baseline', marginBottom: 6 }}>
         <span style={{
           fontFamily: 'var(--cb-font-display)', fontWeight: 700, fontSize: 20,
-          // `background` (not backgroundImage): --cb-grad is a plain colour for single-colour accents
-          background: 'var(--cb-grad, var(--cb-update-accent, var(--cb-mint)))', WebkitBackgroundClip: 'text', backgroundClip: 'text',
+          // fixed brand gradient: the version never follows the app's accent colour
+          background: 'var(--cb-grad-brand, linear-gradient(135deg, #3FE0C5 0%, #3B8DFF 55%, #5B6BFF 100%))',
+          WebkitBackgroundClip: 'text', backgroundClip: 'text',
           color: 'transparent', letterSpacing: '0.04em',
         }}>
           {entry.v}
