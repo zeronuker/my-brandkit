@@ -63,7 +63,8 @@ function ChangelogEntry({ entry, isCurrent = false }) {
       <div style={{ display: 'flex', gap: 14, alignItems: 'baseline', marginBottom: 6 }}>
         <span style={{
           fontFamily: 'var(--cb-font-display)', fontWeight: 700, fontSize: 20,
-          backgroundImage: 'var(--cb-grad)', WebkitBackgroundClip: 'text', backgroundClip: 'text',
+          // `background` (not backgroundImage): --cb-grad is a plain colour for single-colour accents
+          background: 'var(--cb-grad, var(--cb-update-accent, var(--cb-mint)))', WebkitBackgroundClip: 'text', backgroundClip: 'text',
           color: 'transparent', letterSpacing: '0.04em',
         }}>
           {entry.v}
