@@ -16,7 +16,7 @@ const ICONS = {
   palette: '<circle cx="12" cy="12" r="8.5"/><circle cx="8.3" cy="10" r="1.1"/><circle cx="12" cy="7.6" r="1.1"/><circle cx="15.7" cy="10" r="1.1"/><path d="M12 20.5c-1.6 0-2.1-1.6-1.1-2.6.9-.9.4-2.9 2-2.9h3.4"/>',
   views: '<rect x="3.5" y="5" width="17" height="14"/><path d="M9.5 5v14M15 5v14"/>',
   nav: '<circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
-  tools: '<path d="M14.7 6.3a4 4 0 0 0 5 5L11 20a2.1 2.1 0 0 1-3-3l8.7-8.7z"/><path d="M14.7 6.3L17 4"/>',
+  tools: '<path transform="rotate(45 12 12)" d="M10.4 2.69V6.8A1.6 1.6 0 0 0 13.6 6.8V2.69A4.6 4.6 0 0 1 13.8 11.23V20A1.8 1.8 0 0 1 10.2 20V11.23A4.6 4.6 0 0 1 10.4 2.69Z"/>',
   about: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8v.4"/>',
   user: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1-3.5 4-5 7-5s6 1.5 7 5"/>',
   logbook: '<path d="M9 7h11M9 12h11M9 17h11M4.5 7h.5M4.5 12h.5M4.5 17h.5"/>',
