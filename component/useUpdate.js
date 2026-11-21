@@ -17,6 +17,25 @@ import { useRegisterSW } from "virtual:pwa-register/react";
 // `autoUpdateDisabled` (persisted per app) stops everything automatic: the
 // poll/visibility checks, the build-info.json fetch, and the toast (so no
 // countdown). Manual `checkForUpdate` / `updateServiceWorker` still work.
+// Site storage can be blocked (strict privacy settings): using it must not
+// stop the app from starting, so these swallow the error.
+function readFlag(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeFlag(key, value) {
+  try {
+    if (value == null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch {
+    // not saved; the choice still holds until the page is closed
+  }
+}
+
 export function useUpdate(appId, pollIntervalMs = 60_000) {
   const current = { commit: __COMMIT_SHA__, version: __COMMIT_SHA__.slice(0, 7) };
   const dismissedKey = `${appId}-update-dismissed-commit`;
@@ -25,7 +44,7 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
   const intervalRef = useRef(null);
   const visibilityHandlerRef = useRef(null);
   const [autoUpdateDisabled, setDisabledState] = useState(
-    () => localStorage.getItem(disabledKey) === "1",
+    () => readFlag(disabledKey) === "1",
   );
   // ref so the long-lived interval/visibility callbacks see the live value
   const disabledRef = useRef(autoUpdateDisabled);
@@ -33,9 +52,7 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
   const [latest, setLatest] = useState(null);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateChecked, setUpdateChecked] = useState(false);
-  const [dismissedCommit, setDismissedCommit] = useState(() =>
-    localStorage.getItem(dismissedKey),
-  );
+  const [dismissedCommit, setDismissedCommit] = useState(() => readFlag(dismissedKey));
 
   const {
     needRefresh: [needRefresh],
@@ -82,8 +99,7 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
 
   const setAutoUpdateDisabled = useCallback(
     (disabled) => {
-      if (disabled) localStorage.setItem(disabledKey, "1");
-      else localStorage.removeItem(disabledKey);
+      writeFlag(disabledKey, disabled ? "1" : null);
       setDisabledState(disabled);
     },
     [disabledKey],
@@ -108,7 +124,7 @@ export function useUpdate(appId, pollIntervalMs = 60_000) {
 
   const dismissLatest = useCallback(() => {
     if (!latest) return;
-    localStorage.setItem(dismissedKey, latest.commit);
+    writeFlag(dismissedKey, latest.commit);
     setDismissedCommit(latest.commit);
   }, [latest, dismissedKey]);
 

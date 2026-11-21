@@ -3,7 +3,7 @@
 // sizes needed for iOS/Android/favicons.
 // Run from the consuming app's root (cwd): node brand-kit/scripts/generate-brand-icons.mjs
 import { Resvg } from '@resvg/resvg-js';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, mkdtempSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, dirname, resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
